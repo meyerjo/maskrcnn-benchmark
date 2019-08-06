@@ -216,6 +216,83 @@ class TestNMS(unittest.TestCase):
 
         np.testing.assert_array_equal(keep_indices, gt_indices)
 
+    def test_nms2_cpu(self):
+        """ Match unit test UtilsNMSTest.TestNMS1 in
+            caffe2/operators/generate_proposals_op_util_nms_test.cc
+        """
+
+        boxes = torch.from_numpy(
+            np.array(
+                [
+                    [0, 0, 10, 10],
+                    [1, 1, 11, 11],
+                ]
+            ).astype(np.float32)
+        )
+        scores = torch.from_numpy(
+            np.array(
+                [
+                    0.9,
+                    0.9,
+                ]
+            ).astype(np.float32)
+        )
+
+        gt_indices = np.array(
+            [
+                1,
+                6,
+            ]
+        )
+        from maskrcnn_benchmark.structures.bounding_box import BoxList
+        keep_indices = box_nms(boxes, scores, 0.7)
+        keep_indices = np.sort(keep_indices)
+
+        # # make sure we have a similar understanding on what the size
+        # # of these boxes should be
+        # np.testing.assert_array_equal(
+        #     BoxList(boxes, image_size=(1280, 720), mode="xyxy").area(),
+        #     (100, 100)
+        # )
+        # All boxes should be kept as the original IoU will be 0.68
+        # This test case will fail with the original implementation
+        np.testing.assert_array_equal(keep_indices, np.array([0, 1]))
+
+    def test_nms_working_cpu(self):
+        """ Match unit test UtilsNMSTest.TestNMS1 in
+            caffe2/operators/generate_proposals_op_util_nms_test.cc
+        """
+
+        boxes = torch.from_numpy(
+            np.array(
+                [
+                    [0, 0, 10, 10],
+                    [1, 1, 11, 11],
+                ]
+            ).astype(np.float32)
+        )
+        scores = torch.from_numpy(
+            np.array(
+                [
+                    0.9,
+                    0.9,
+                ]
+            ).astype(np.float32)
+        )
+
+        gt_indices = np.array(
+            [
+                1,
+                6,
+            ]
+        )
+        # so far all the same. now scaling up the boxes
+        keep_indices = box_nms(boxes * 100, scores, 0.7)
+        keep_indices = np.sort(keep_indices)
+        # All boxes should be kept as the original IoU will be 0.68
+        # This test case will pass as the boxes have been scaled by the factor of 100
+        np.testing.assert_array_equal(keep_indices, np.array([0, 1]))
+
 
 if __name__ == "__main__":
     unittest.main()
